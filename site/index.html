@@ -78,6 +78,7 @@
       <code>$iban="DE44500105175407324931"<br>
       $h=[BitConverter]::ToString((([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes($iban)))) -replace '-',''</code></li>
   </ul>
+  <p>der Quellcode dieser Seite ist unter https://github.com/cablebender/iban-check ver&ouml;ffentlicht und steht unter der MIT-Lizenz.</p>
 </details>
 <!-- Fallback-Lib für unsichere Kontexte / ältere Browser -->
 <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
