@@ -32,154 +32,76 @@
         <div id="output"></div>
     </form>
 
-<!-- Fallback‑Lib für unsichere Kontexte / ältere Browser -->
+<!-- Fallback-Lib für unsichere Kontexte / ältere Browser -->
 <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
 <script>
 const output = document.getElementById('output');
 const form   = document.getElementById('form');
 
-// SHA‑256 Helfer (WebCrypto + Fallback)
+// SHA-256: WebCrypto oder Fallback-Bibliothek
 async function sha256Hex(str){
   const clean = str.replace(/\s+/g,'');
-  if(window.crypto && crypto.subtle){
-      const data = new TextEncoder().encode(clean);
-      const buf  = await crypto.subtle.digest('SHA-256', data);
+  if (window.crypto && crypto.subtle){
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(clean));
       return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
   }
-  if(typeof sha256 === 'function'){
+  if (typeof sha256 === 'function'){
       return sha256(clean).toLowerCase();
   }
-  throw new Error('SHA‑256 nicht verfügbar');
+  throw new Error('SHA-256 nicht verfügbar');
 }
 
-// DNS‑over‑HTTPS TXT‑Lookup inkl. DNSSEC‑Status
+// TXT-Lookup mit DNSSEC-Flag
 async function txtRecords(name){
-  const res = await fetch(`https://dns.google/resolve?name=${name}&type=TXT&do=1`);
-  if(!res.ok) throw new Error('DNS Lookup fehlgeschlagen');
-  const json = await res.json();
-  const answers = (json.Answer || []).map(a=>a.data.replace(/(^\"|\"$)/g,''));
-  const dnssecOK = json.AD === true;  // AD‑Flag ⇒ DNSSEC validiert
-  return {answers, dnssecOK};
+  const r = await fetch(`https://dns.google/resolve?name=${name}&type=TXT&do=1`);
+  if (!r.ok) throw new Error('DNS Lookup fehlgeschlagen');
+  const j = await r.json();
+  return {
+    answers: (j.Answer || []).map(a => a.data.replace(/(^"|"$)/g,'')),
+    dnssecOK: j.AD === true               // Authenticated-Data-Flag
+  };
 }
 
-form.addEventListener('submit', async e => {
-  e.preventDefault();
+form.addEventListener('submit', async ev => {
+  ev.preventDefault();
   output.className = 'result warn';
   output.textContent = '⏳ Prüfe …';
 
-  try {
-    const iban   = form.iban.value.trim();
-    const domain = form.domain.value.trim().toLowerCase();
-    const ibanHash = (await sha256Hex(iban)).toLowerCase();
-
-    // Subdomain‑Labels _iban … _iban10
-    const labels = Array.from({length:10}, (_,i)=> i===0 ? '_iban' : `_iban${i+1}`);
-    const lookups = await Promise.all(labels.map(l => txtRecords(`${l}.${domain}`)));
-
-    const allTxt = lookups.flatMap(l => l.answers);
-
-    const valid = allTxt.map(txt => {
-        return Object.fromEntries(txt.split(';').map(s=>s.trim()).map(p => {
-            const [k,v] = p.split('=');
-            return [k.trim().toLowerCase(), v.trim()];
-        }));
-    }).filter(o => o.v==='1' && o.k==='sha256' && o.hash);
-
-    const match  = valid.find(o => o.hash.toLowerCase() === ibanHash);
-    const dnssec = lookups.some(l => l.dnssecOK);
-
-    if(match){
-        if(dnssec){
-            output.className = 'result ok';
-            output.textContent = '✅ Übertragung sicher und Hash vorhanden (DNSSEC geprüft)';
-        }else{
-            output.className = 'result warn';
-            output.textContent = '⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC‑Signatur)';
-        }
-    }else{
-        output.className = 'result fail';
-        output.textContent = '❌ Kein passender Hash gefunden.';
-    }
-  } catch(err){
-    output.className = 'result fail';
-    output.textContent = 'Fehler: ' + err.message;
-  }
-});
-</script>
-<script>
-const output = document.getElementById('output');
-const form   = document.getElementById('form');
-
-// Hilfsfunktion: SHA‑256 → Hex
-async function sha256Hex(str){
-  const clean = str.replace(/\s+/g,''); // Whitespaces entfernen
-
-  // WebCrypto verfügbar & Seite im Secure Context (https/localhost)?
-  if(window.crypto && crypto.subtle){
-      const encoder = new TextEncoder();
-      const data = encoder.encode(clean);
-      const hashBuf = await crypto.subtle.digest('SHA-256', data);
-      return Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  }
-  // Fallback: js-sha256 Bibliothek (per <script src="cdn.jsdelivr...">)
-  if(typeof sha256 === 'function'){
-      return sha256(clean).toLowerCase();
-  }
-  throw new Error('SHA‑256 nicht verfügbar: Seite muss über HTTPS geladen werden.');
-}
-
-// DNS-over-HTTPS TXT Lookup (Google)
-// DNS-over-HTTPS TXT Lookup (Google) – liefert Datensätze **und** DNSSEC‑Status
-async function txtRecords(name){
-  const res = await fetch(`https://dns.google/resolve?name=${name}&type=TXT&do=1`); // do=1 = DNSSEC OK
-  if(!res.ok) throw new Error('DNS Lookup fehlgeschlagen');
-  const json = await res.json();
-  const answers = (json.Answer || []).map(a=>a.data.replace(/(^\"|\"$)/g,''));
-  const dnssecOK = json.AD === true; // Authenticated Data Flag ⇒ DNSSEC validiert
-  return {answers, dnssecOK};
-}&type=TXT`);
-  if(!res.ok) throw new Error('DNS Lookup fehlgeschlagen');
-  const json = await res.json();
-  return (json.Answer || []).map(a=>a.data.replace(/(^\"|\"$)/g,''));
-}
-
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-  output.className = 'result warn';
-  output.textContent = '⏳ Prüfe …';
-
-  const iban    = form.iban.value.trim();
-  const domain  = form.domain.value.trim().toLowerCase();
-  const ibanHash = (await sha256Hex(iban)).toLowerCase();
-
   try{
-    // Liste der Subdomains: iban, iban2, … iban10
-        // Labels: _iban, _iban2 … _iban10
-    const labels = Array.from({length:10}, (_,i)=> i===0 ? '_iban' : `_iban${i+1}`);
+      const iban    = form.iban.value.trim();
+      const domain  = form.domain.value.trim().toLowerCase();
+      const ibanHex = await sha256Hex(iban);
 
-    const lookups = await Promise.all(labels.map(lbl => txtRecords(`${lbl}.${domain}`)));
+      // _iban … _iban10
+      const labels   = Array.from({length:10}, (_,i)=> i===0 ? '_iban' : `_iban${i+1}`);
+      const lookups  = await Promise.all(labels.map(l => txtRecords(`${l}.${domain}`)));
 
-    // Flatten + filtern
-    const allTxt = lookups.flat();
-    const valid = allTxt.map(txt=>{
-        const parts = txt.split(';').map(s=>s.trim());
-        const obj = Object.fromEntries(parts.map(p=>{
-            const [k,v] = p.split('=');
-            return [k.trim().toLowerCase(), v.trim()];
-        }));
-        return obj;
-    }).filter(o => o.v==='1' && o.k==='sha256' && o.hash);
+      const txtLines = lookups.flatMap(l => l.answers);
+      const records  = txtLines.map(t => Object.fromEntries(
+                            t.split(';').map(s=>s.trim()).map(p=>p.split('=').map(x=>x.trim().toLowerCase()))
+                        )).filter(o => o.v==='1' && o.k==='sha256' && o.hash);
 
-    const match = valid.find(o => o.hash.toLowerCase() === ibanHash);
+      const match    = records.find(o => o.hash.toLowerCase() === ibanHex);
+      const dnssecOK = lookups.some(l => l.dnssecOK);
 
-    output.className = 'result ' + (match ? 'ok' : 'fail');
-    output.textContent = match ? '✅ Hash stimmt (v=1, k=sha256)' : '❌ Kein passender Hash gefunden.';
-
+      if (match){
+          if (dnssecOK){
+              output.className = 'result ok';
+              output.textContent = '✅ Übertragung sicher und Hash vorhanden (DNSSEC geprüft)';
+          }else{
+              output.className = 'result warn';
+              output.textContent = '⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC-Signatur)';
+          }
+      }else{
+          output.className = 'result fail';
+          output.textContent = '❌ Kein passender Hash gefunden.';
+      }
   }catch(err){
-    output.className = 'result fail';
-    output.textContent = 'Fehler: '+ err.message;
+      output.className = 'result fail';
+      output.textContent = 'Fehler: ' + err.message;
   }
 });
 </script>
+
 </body>
 </html>
