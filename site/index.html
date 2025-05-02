@@ -1,9 +1,9 @@
-><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>iban-check.org – IBAN ⇄ DNS Hash Checker</title>
+    <title>iban-check.org – IBAN ⇄ DNS Hash Checker</title>
     <style>
         *{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
         body{display:grid;place-items:center;min-height:100vh;margin:0;background:#f5f7fa}
@@ -26,9 +26,9 @@
 </head>
 <body>
     <form id="form">
-        <h1>iban-check.org - IBAN als SHA256 im DNS vergleichen</h1>
+        <h1>iban-check.org - IBAN als SHA256 im DNS vergleichen</h1>
         <label for="iban">IBAN</label>
-        <input id="iban" name="iban" placeholder="DE12 3456 7890 1234 5678 90" required>
+        <input id="iban" name="iban" placeholder="DE12 3456 7890 1234 5678 90" required>
 
         <label for="domain">Mail-Absendedomain</label>
         <input id="domain" name="domain" placeholder="example.com" required>
@@ -83,7 +83,7 @@
     <li><strong>Windows (PowerShell)</strong>  
       <code>powershell -NoProfile -Command "$iban='DE44500105175407324931';[BitConverter]::ToString((([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes($iban)))) -replace '-',''"</code></li>
   </ul>
-  <p>der Quellcode dieser Seite ist unter <a href="https://github.com/cablebender/iban-check>https://github.com/cablebender/iban-check</a> ver&ouml;ffentlicht und steht unter der MIT-Lizenz.</p>
+  <p>der Quellcode dieser Seite ist unter https://github.com/cablebender/iban-check ver&ouml;ffentlicht und steht unter der MIT-Lizenz.</p>
 </details>
 
 <!-- Fallback-Lib f&uuml;r unsichere Kontexte / &auml;ltere Browser -->
