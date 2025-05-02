@@ -1,5 +1,7 @@
 # IBAN-Check als Proof-of-Concept
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 https://www.iban-check.org und https://iban-check.netzsicher.net
 
 Powered by https://www.netzsicher.net
