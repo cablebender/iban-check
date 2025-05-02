@@ -15,10 +15,9 @@ Ein Rechnungsersteller setzt im DNS verschlüsselte Einträge seiner Bankverbind
 printf '%s' "DE44500105175407324931" \| tr -d '[:space:]' \| sha256sum \| cut -d' ' -f1
 ```
 
-#### Windows (PowerShell):
+#### Windows:
 ```
-$iban="DE44500105175407324931"
-$h=[BitConverter]::ToString((([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes($iban)))) -replace '-',''
+powershell -NoProfile -Command "$iban='DE44500105175407324931';[BitConverter]::ToString((([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes($iban)))) -replace '-',''"
 ```
 ### im DNS veröffentlichen
 #### bei einer IBAN:
