@@ -117,10 +117,26 @@ async function txtRecords(name){
   };
 }
 
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const iban   = params.get('iban');
+  const domain = params.get('domain');
+  const submitParam = params.get('submit');
+
+  if (iban)   form.iban.value   = iban;
+  if (domain) form.domain.value = domain;
+
+  // Nur wenn explizit ?submit=1 in der URL steht
+  if (iban && domain && submitParam === '1') {
+//    form.dispatchEvent(new Event('submit'));
+    form.requestSubmit();
+  }
+});
+
 form.addEventListener('submit', async ev => {
   ev.preventDefault();
   output.className = 'result warn';
-  output.textContent = '⏳ Pr&uuml;fe …';
+  output.textContent = '⏳ Prüfe …';
 
   try{
       const iban    = form.iban.value.trim();
@@ -145,10 +161,10 @@ form.addEventListener('submit', async ev => {
       if (match){
           if (dnssecOK){
               output.className = 'result ok';
-              output.textContent = '✅ &uuml;bertragung sicher und Hash vorhanden (DNSSEC gepr&uuml;ft)';
+              output.textContent = '✅ Übertragung sicher und Hash vorhanden (DNSSEC geprüft)';
           }else{
               output.className = 'result warn';
-              output.textContent = '⚠️ Hash stimmt, aber &uuml;bertragung unsicher (keine DNSSEC-Signatur)';
+              output.textContent = '⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC-Signatur)';
           }
           matchedRecord.textContent = `v=${match.v}; k=${match.k}; hash=${match.hash}`;
           dnssecStatus.textContent  = dnssecOK ? '✔ DNSSEC vorhanden' : '⚠ kein DNSSEC';
@@ -168,4 +184,3 @@ form.addEventListener('submit', async ev => {
     <img src="https://iban-check.netzsicher.net/Netzsicher_Logo_email.png" alt="netzsicher-Logo"></img>
 </body>
 </html>
-
