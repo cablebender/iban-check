@@ -1,15 +1,13 @@
 <#
 .SYNOPSIS
-    IBAN ⇄ DNS-SHA256 Checker mit DNSSEC-Validierung per DNS-over-HTTPS.
+    IBAN ⇄ DNS-SHA256 Checker mit optionalen Debug-/Verbose-Ausgaben.
 
 .DESCRIPTION
     Entfernt Whitespace aus der IBAN, berechnet den SHA-256-Hash, fragt bis zu zehn
-    TXT-Records (_iban … _iban10) über dns.google/resolve ab (mit DNSSEC-Flag),
-    vergleicht den Hash und gibt Status sowie Exit-Code zurück:
-      0 = Übertragung sicher & Hash gefunden
-      1 = Hash gefunden, aber ohne DNSSEC
-      2 = Kein passender Hash gefunden
-      3 = Fehler bei DNS-Abfrage
+    TXT-Records (_iban … _iban10) über DNS-over-HTTPS ab (mit DNSSEC-Flag),
+    vergleicht den Hash und gibt Status sowie Exit-Code zurück.
+    Mit `-Debug` oder `-Verbose` erhältst Du zusätzliche Debug-Informationen,
+    inklusive eines nslookup-Fallbacks, wenn Resolve-DnsName fehlt.
 
 .PARAMETER Iban
     Die zu prüfende IBAN (z.B. DE44500105175407324931).
@@ -21,80 +19,110 @@
     (Optional) URL des DoH-Resolvers. Standard: https://dns.google/resolve
 
 .EXAMPLE
-    .\IbanCheck.ps1 -Iban "DE44500105175407324931" -Domain "example.com"
-
-.NOTES
-    Erfordert PowerShell 5+ (Windows) oder PowerShell Core (Linux/macOS).
+    .\iban-check.ps1 -Iban "DE44500105175407324931" -Domain "example.com" -Debug
 #>
 
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)][string] $Iban,
     [Parameter(Mandatory)][string] $Domain,
     [string] $Resolver = 'https://dns.google/resolve'
 )
 
-# 1) Berechne SHA-256-Hash (hex, lowercase)
-$clean = $Iban -replace '\s',''
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($clean)
-$sha   = [System.Security.Cryptography.SHA256]::Create()
-$hashBytes = $sha.ComputeHash($bytes)
+function Write-DebugLog { param($m); Write-Debug $m; Write-Verbose $m }
+
+# 1) Resolver-URL validieren
+if ($Resolver -notmatch '^https?://') {
+    $Resolver = "https://$Resolver"
+    Write-DebugLog "Resolver korrigiert auf: $Resolver"
+}
+
+# 2) SHA-256-Hash der IBAN
+$clean     = $Iban -replace '\s',''
+$bytes     = [Text.Encoding]::UTF8.GetBytes($clean)
+$hashBytes = [Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
 $ibanHash  = ($hashBytes | ForEach-Object { $_.ToString('x2') }) -join ''
 
-$dnssecOK = $false
-$found    = $false
+Write-DebugLog "Saubere IBAN: $clean"
+Write-DebugLog "Hash: $ibanHash"
+
+$dnssecOK      = $false
+$found         = $false
 $matchedRecord = $null
 
-# 2) Schleife über _iban … _iban10
+# 3) Schleife über _iban … _iban10
 for ($i = 1; $i -le 10 -and -not $found; $i++) {
     $label = if ($i -eq 1) { '_iban' } else { "_iban$i" }
     $name  = "$label.$Domain"
 
-    # Baue DoH-URL mit DNSSEC-Flag (do=1)
-    $url = "$Resolver?name=$name&type=TXT&do=1"
+    # UriBuilder für DoH-Anfrage
+    $u       = [UriBuilder]::new($Resolver)
+    $u.Query = "name=$name&type=TXT&do=1"
+    $dohUrl  = $u.Uri.AbsoluteUri
+
+    Write-DebugLog "DoH-Resolver: $Resolver"
+    Write-DebugLog "DoH-URL:      $dohUrl"
+
+    if ($PSBoundParameters.Debug -or $PSBoundParameters.Verbose) {
+        # Versuche Resolve-DnsName
+        if (Get-Command Resolve-DnsName -ErrorAction SilentlyContinue) {
+            Write-DebugLog ">> Resolve-DnsName:"
+            try {
+                Resolve-DnsName -Name $name -Type TXT -Server 8.8.8.8 -ErrorAction Stop |
+                  ForEach-Object { Write-DebugLog "   TXT: $($_.Strings -join '') (DNSSEC: $($_.Secured))" }
+            } catch {
+                Write-DebugLog "   Resolve-DnsName-Fehler: $($_.Exception.Message)"
+            }
+        }
+        else {
+            Write-DebugLog ">> Resolve-DnsName nicht verfügbar, nutze nslookup-Fallback"
+            $ns = nslookup -type=TXT $name 8.8.8.8 2>&1
+            $ns | ForEach-Object { Write-DebugLog "   nslookup: $_" }
+        }
+    }
 
     try {
-        $resp = Invoke-RestMethod -Uri $url -UseBasicParsing -ErrorAction Stop
+        $resp = Invoke-RestMethod -Uri $u.Uri -UseBasicParsing -ErrorAction Stop
     }
     catch {
-        Write-Error "DNS-Fehler bei $name: $_"
+        Write-Error "DNS-Fehler bei ${name}: $_"
         exit 3
     }
 
-    # DNSSEC-AD-Flag auswerten
-    if ($resp.AD -eq $true) { $dnssecOK = $true }
+    if ($resp.AD) {
+        $dnssecOK = $true
+        Write-DebugLog "DNSSEC validiert (AD=1)"
+    }
 
-    # TXT-Einträge parsen
     foreach ($ans in $resp.Answer) {
-        # Daten ohne führende/abgeschlossene Anführungszeichen
-        $txt = $ans.data.Trim('"') 
-        # v=1; k=sha256; hash=…
+        $txt = $ans.data.Trim('"')
+        Write-DebugLog "Gefundener TXT: $txt"
+
         $map = @{}
         $txt.Split(';') | ForEach-Object {
             $kv = $_.Trim().Split('=',2)
-            if ($kv.Length -eq 2) {
-                $map[$kv[0].ToLower()] = $kv[1].ToLower()
-            }
+            if ($kv.Length -eq 2) { $map[$kv[0].ToLower()] = $kv[1].ToLower() }
         }
-        if (($map.v -eq '1') -and ($map.k -eq 'sha256') -and ($map.hash -eq $ibanHash)) {
-            $found = $true
+        if ($map.v -eq '1' -and $map.k -eq 'sha256' -and $map.hash -eq $ibanHash) {
+            $found         = $true
             $matchedRecord = $txt
+            Write-DebugLog "Record passt!"
             break
         }
     }
 }
 
-# 3) Ergebnis ausgeben & Exit-Code setzen
+# 4) Ausgabe & Exit-Code
 if ($found) {
     if ($dnssecOK) {
         Write-Host "✅ Übertragung sicher und Hash vorhanden"
         Write-Host "Gefundener Record: $matchedRecord"
         exit 0
-    } else {
-        Write-Host "⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC-Signatur)"
-        Write-Host "Gefundener Record: $matchedRecord"
-        exit 1
     }
-} else {
-    Write-Host "❌ Kein passender Hash gefunden."
-    exit 2
+    Write-Host "⚠️ Hash stimmt, aber ohne DNSSEC"
+    Write-Host "Gefundener Record: $matchedRecord"
+    exit 1
 }
+
+Write-Host "❌ Kein passender Hash gefunden."
+exit 2
