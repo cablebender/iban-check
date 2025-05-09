@@ -16,12 +16,12 @@ Ein Rechnungsersteller setzt im DNS verschlüsselte Einträge seiner Bankverbind
 ### SHA-256 einer IBAN erstellen
 #### Linux / macOS:
 ```
-printf '%s' "DE44500105175407324931" \| tr -d '[:space:]' \| sha256sum \| cut -d' ' -f1
+printf '%s' "DE12 3456 7890 1234 5678 90" | tr -d '[:space:]' | sha256sum | cut -d' ' -f1
 ```
 
-#### Windows:
+#### Windows (Powershell):
 ```
-powershell -NoProfile -Command "$iban='DE44500105175407324931';[BitConverter]::ToString((([Security.Cryptography.SHA256]::Create()).ComputeHash([Text.Encoding]::UTF8.GetBytes($iban)))) -replace '-',''"
+([BitConverter]::ToString(([System.Security.Cryptography.SHA256]::Create()).ComputeHash([System.Text.Encoding]::UTF8.GetBytes(("DE12 3456 7890 1234 5678 90" -replace '\s','')))) -replace '-','').ToLower()
 ```
 ### im DNS veröffentlichen
 #### bei einer IBAN:
