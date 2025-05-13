@@ -1,71 +1,184 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>iban-check.org – IBAN ⇄ DNS Hash Checker</title>
-    <style>
-        *{box‐sizing:border‐box;font‐family:system‐ui,Segoe UI,Roboto,Helvetica,Arial,sans‐serif}
-        body{display:grid;place‐items:center;min‐height:100vh;margin:0;background:#f5f7fa}
-        form{background:#fff;padding:2rem 3rem;border‐radius:1rem;box‐shadow:0 4px 20px rgba(0,0,0,.1);width:clamp(300px,90vw,480px)}
-        h1{margin‐top:0;font‐size:1.4rem;text‐align:center}
-        label{display:block;margin:1rem 0 .4rem;font‐weight:600}
-        input{width:100%;padding:.6rem .8rem;border:1px solid #c3c7cf;border‐radius:.5rem;font‐size:1rem}
-        button{margin‐top:1.4rem;width:100%;padding:.8rem;border:0;border‐radius:.5rem;font‐size:1rem;font‐weight:600;cursor:pointer;background:#2563eb;color:#fff}
-        button:disabled{background:#a5b4fc;cursor:not‐allowed}
-        /* Ergebnis‐Boxen */
-        .result{margin‐top:1.4rem;padding:1rem;border‐radius:.5rem;font‐size:.95rem}
-        .ok{background:#d1fae5;color:#065f46;border:1px solid #34d399}
-        .warn{background:#fef9c3;color:#92400e;border:1px solid #fde047}
-        .fail{background:#fee2e2;color:#b91c1c;border:1px solid #f87171}
-        /* Info‐Box für reinen Hash */
-        .Info{background:#fff;color:#000;border:1px solid #c3c7cf}
-        /* match‐Info bleibt unverändert */
-        details.help {margin‐top:1.5rem;padding:.75rem 1rem;border:1px solid #ccc;border‐radius:.4rem;background:#f9f9f9;width:clamp(300px,90vw,480px);margin:0 auto;}
-        /* make summary clickable */
-        details.help summary {cursor:pointer;}
-        .match‐info {margin‐top:1rem;padding:.5rem .8rem;border‐left:4px solid #4e9a06;background:#eef9ee;font‐size:.95rem;}
-        .result.warn + .match‐info {border‐left‐color:#d9a300;background:#fffbe6;}
-        .result.fail + .match‐info {border‐left‐color:#cc0000;background:#fceaea;}
-        pre{white‐space:pre‐wrap;word‐break:break‐word;}
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>iban-check.org – IBAN ⇄ DNS Hash Checker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f5f7fa;
+    }
+    form {
+      background: #fff;
+      padding: 2rem 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .1);
+      width: clamp(300px, 90vw, 480px);
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 1.4rem;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin: 1rem 0 .4rem;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: .6rem .8rem;
+      border: 1px solid #c3c7cf;
+      border-radius: .5rem;
+      font-size: 1rem;
+    }
+    button {
+      margin-top: 1.4rem;
+      width: 100%;
+      padding: .8rem;
+      border: 0;
+      border-radius: .5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+    }
+    button:disabled {
+      background: #a5b4fc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 1.4rem;
+      padding: 1rem;
+      border-radius: .5rem;
+      font-size: .95rem;
+    }
+    .ok {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #34d399;
+    }
+    .fail {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #f87171;
+    }
+    .warn {
+      background: #fef9c3;
+      color: #92400e;
+      border: 1px solid #fde047;
+    }
+    /* Info-Box für den reinen Hash */
+    .Info {
+      background: #fff;
+      color: #000;
+      border: 1px solid #c3c7cf;
+    }
+    details.help {
+      margin-top: 1.5rem;
+      padding: .75rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: .4rem;
+      background: #f9f9f9;
+      width: clamp(300px, 90vw, 480px);
+      margin-left: auto;
+      margin-right: auto;
+    }
+    details.help summary {
+      cursor: pointer;
+    }
+    .match-info {
+      margin-top: 1rem;
+      padding: .5rem .8rem;
+      border-left: 4px solid #4e9a06;
+      background: #eef9ee;
+      font-size: .95rem;
+    }
+    .result.warn + .match-info {
+      border-left-color: #d9a300;
+      background: #fffbe6;
+    }
+    .result.fail + .match-info {
+      border-left-color: #cc0000;
+      background: #fceaea;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
 </head>
 <body>
-    <form id="form">
-        <h1>iban-check.org - IBAN als SHA256 im DNS vergleichen</h1>
-        <label for="iban">IBAN</label>
-        <input id="iban" name="iban" placeholder="DE12 3456 7890 1234 5678 90" required>
+  <form id="form">
+    <h1>iban-check.org - IBAN als SHA256 im DNS vergleichen</h1>
+    <label for="iban">IBAN</label>
+    <input id="iban" name="iban" placeholder="DE12 3456 7890 1234 5678 90" required>
 
-        <label for="domain">Mail-Absendedomain</label>
-        <input id="domain" name="domain" placeholder="example.com">
+    <label for="domain">Mail-Absendedomain</label>
+    <input id="domain" name="domain" placeholder="example.com">
 
-        <button type="submit">Hash erstellen oder IBAN prüfen</button>
-    </form>
+    <button type="submit">Hash erstellen und IBAN prüfen</button>
+  </form>
 
-    <!-- Ausgabe Hash-only -->
-    <div id="output"></div>
-    <!-- Ausgabe DNS-Ergebnis -->
-    <div id="dnsResult"></div>
+  <!-- Ausgabe Hash-only -->
+  <div id="output"></div>
+  <!-- Ausgabe DNS-Ergebnis -->
+  <div id="dnsResult"></div>
 
-    <!-- Treffer‐Details -->
-    <div id="matchInfo" class="match-info" hidden>
-      <h3>Treffer-Details</h3>
-      <p><strong>Gefundener TXT-Record:</strong> <code id="matchedRecord"></code></p>
-      <p><strong>DNSSEC-Status:</strong> <span id="dnssecStatus"></span></p>
-    </div>
+  <!-- Treffer-Details -->
+  <div id="matchInfo" class="match-info" hidden>
+    <h3>Treffer-Details</h3>
+    <p><strong>Gefundener TXT-Record:</strong> <code id="matchedRecord"></code></p>
+    <p><strong>DNSSEC-Status:</strong> <span id="dnssecStatus"></span></p>
+  </div>
 
-    <!-- Hilfe‐Sektionen… unverändert … -->
-    <details class="help">
-      <summary><strong>Kurze Zusammenfassung</strong></summary>
-      <!-- Inhalt… -->
-    </details>
-    <details class="help">
-      <summary><strong>technische Erläuterung</strong></summary>
-      <!-- Inhalt… -->
-    </details>
+  <!-- Hilfeboxen -->
+  <details class="help">
+    <summary><strong>Kurze Zusammenfassung</strong></summary>
+<p>Der IBAN-Check hilft dabei, Betrug durch gef&auml;lschte Kontodaten auf Rechnungen zu erkennen. Man gibt die IBAN und die Maildomain (hinter dem @ beim Absender) ein, und das System pr&uuml;ft automatisch, ob die IBAN wirklich zu dieser Firma geh&ouml;rt. Das Ergebnis wird wie bei einer Ampel angezeigt:
+  Gr&uuml;n = sicher, Gelb = unsicher (aber korrekt), Rot = gef&auml;hrlich (wahrscheinlich Betrug).</p>
+  <h3>Hinweis</h3>
+    <p>Diese Seite ist ein Proof-of-Work zur Darstellung der Funktion und zum Test. Das Konzept funktioniert problemlos dezentral, autark und ohne diese Webseite. Als API wird lediglich eine Abfrage im DNS vorausgesetzt.</p>
+  <h3>Vereinfachte Erkl&auml;rung</h3>
+  <p>In letzter Zeit kommt es immer h&auml;ufiger vor, dass Kriminelle Rechnungen f&auml;lschen und dabei die Bankverbindung (IBAN) austauschen. Der Kunde merkt das oft nicht und &uuml;berweist dann versehentlich Geld direkt an die Betr&uuml;ger.</p>
+  <p>Hier hilft der IBAN-Check – ein Online-Pr&uuml;fwerkzeug, das einfach zeigt, ob die IBAN auf der Rechnung wirklich zur Firma geh&ouml;rt:</p>
+  <p>Die Firma hinterlegt ihre echte IBAN verschl&uuml;sselt im DNS auf ihrer offiziellen Internet-Adresse.</p>
+  <p>Die Firma versendet mit dieser Domain im Absender Mails mit Rechnungen an ihre Kunden.</p>
+  <p>Der Kunde pr&uuml;ft die Rechnung, indem er die IBAN und die Internetadresse der Firma in den IBAN-Check eingibt.</p>
+  <p>Das System vergleicht, ob die IBAN mit der offiziell hinterlegten &uuml;bereinstimmt.</p>
+  <p>Das Ergebnis wird leicht verst&auml;ndlich mit Farben dargestellt:</p>
+  <ul>
+    <li>✅ Alles stimmt und ist sicher.</li>
+    <li>⚠️ IBAN passt, aber die Verbindung war nicht ganz sicher - lieber nochmal genau hinschauen.</li>
+    <li>❌ Achtung! Die IBAN geh&ouml;rt wahrscheinlich nicht zur Firma - m&ouml;glicher Betrug!</li>
+  </ul>
 
-    <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
-    <script>
+  </details>
+  <details class="help">
+    <summary><strong>technische Erläuterung</strong></summary>
+ <h3>Funktionsweise</h3>
+  <p>Die Seite berechnet aus der eingegebenen IBAN einen <em>SHA-256</em>-Hash
+     (ohne Leerzeichen) und sucht danach bis zu zehn TXT-Records
+     <code>_iban[2-10].&lt;deine&nbsp;Domain&gt;</code>.  
+     Stimmen Hash und Meta-Angaben, erscheint ein gr&uuml;nes bzw. gelbes OK.</p>
+
+  <h3>Ben&ouml;tigter DNS-Eintrag</h3>
+  <pre><code>_iban.&lt;example.com&gt; 3600 IN TXT "v=1; k=sha256; hash=&lt;64-stelliger&nbsp;Hex-Hash&gt;"</code></pre>
+  <p>Weitere IBANs → <code>_iban2</code>, <code>_iban3</code> … <code>_iban10</code>.</p>
+  <p>Der Quellcode dieser Seite ist unter <a href="https://github.com/cablebender/iban-check">https://github.com/cablebender/iban-check</a> ver&ouml;ffentlicht und steht unter der MIT-Lizenz.</p>
+  </details>
+
+  <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
+  <script>
     const form      = document.getElementById('form');
     const output    = document.getElementById('output');
     const dnsResult = document.getElementById('dnsResult');
@@ -73,25 +186,25 @@
     const matchedRecord = document.getElementById('matchedRecord');
     const dnssecStatus  = document.getElementById('dnssecStatus');
 
-    async function sha256Hex(str){
-      const clean = str.replace(/\s+/g,'');
-      if (window.crypto && crypto.subtle){
-          const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(clean));
-          return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+    async function sha256Hex(str) {
+      const clean = str.replace(/\s+/g, '');
+      if (window.crypto && crypto.subtle) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(clean));
+        return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
       }
-      if (typeof sha256==='function'){
-          return sha256(clean).toLowerCase();
+      if (typeof sha256 === 'function') {
+        return sha256(clean).toLowerCase();
       }
       throw new Error('SHA-256 nicht verfügbar');
     }
 
-    async function txtRecords(name){
+    async function txtRecords(name) {
       const r = await fetch(`https://dns.google/resolve?name=${name}&type=TXT&do=1`);
       if (!r.ok) throw new Error('DNS Lookup fehlgeschlagen');
       const j = await r.json();
       return {
-        answers: (j.Answer||[]).map(a=>a.data.replace(/(^"|"$)/g,'')),
-        dnssecOK: j.AD===true
+        answers: (j.Answer || []).map(a => a.data.replace(/(^"|"$)/g, '')),
+        dnssecOK: j.AD === true
       };
     }
 
@@ -99,62 +212,60 @@
       ev.preventDefault();
       const iban   = form.iban.value.trim();
       const domain = form.domain.value.trim().toLowerCase();
-      const ibanHex= await sha256Hex(iban);
+      const ibanHex = await sha256Hex(iban);
 
       // 1) immer Hash anzeigen
       output.className = 'result Info';
       output.innerHTML = `Hash lautet:<br>${ibanHex}`;
 
-      // wenn keine Domain → nur Hash
-      if (!domain){
+      // Wenn keine Domain, dann nur Hash
+      if (!domain) {
         dnsResult.textContent = '';
         dnsResult.className = '';
         matchInfo.hidden = true;
         return;
       }
 
-      // 2) bei Domain zuerst Platzhalter
+      // 2) bei Domain zusätzlich DNS-Prüfung
       dnsResult.className = 'result warn';
       dnsResult.textContent = '⏳ Prüfe …';
 
       try {
-        // DNS‐Lookup auf _iban…_iban10
-        const labels = Array.from({length:10},(_,i)=> i===0? '_iban': `_iban${i+1}`);
-        const lookups= await Promise.all(labels.map(l=> txtRecords(`${l}.${domain}`)));
+        const labels  = Array.from({ length: 10 }, (_, i) => i === 0 ? '_iban' : `_iban${i+1}`);
+        const lookups = await Promise.all(labels.map(l => txtRecords(`${l}.${domain}`)));
 
         const records = lookups
-          .flatMap(l=> l.answers)
-          .map(t=> Object.fromEntries(t.split(';')
-            .map(s=>s.trim().split('=').map(x=>x.trim().toLowerCase()))
+          .flatMap(l => l.answers)
+          .map(t => Object.fromEntries(
+            t.split(';').map(s => s.trim().split('=').map(x => x.trim().toLowerCase()))
           ))
-          .filter(o=>o.v==='1' && o.k==='sha256' && o.hash);
+          .filter(o => o.v === '1' && o.k === 'sha256' && o.hash);
 
-        const match = records.find(o=> o.hash===ibanHex);
-        const dnssecOK = lookups.some(l=> l.dnssecOK);
+        const match = records.find(o => o.hash === ibanHex);
+        const dnssecOK = lookups.some(l => l.dnssecOK);
 
-        if (match){
-          // DNS‐Result anzeigen
-          if (dnssecOK){
-            dnsResult.className = 'result ok';
-            dnsResult.textContent = '✅ Übertragung sicher und Hash vorhanden (DNSSEC geprüft)';
-          } else {
-            dnsResult.className = 'result warn';
-            dnsResult.textContent = '⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC-Signatur)';
-          }
+        if (match) {
+          dnsResult.className = dnssecOK ? 'result ok' : 'result warn';
+          dnsResult.textContent = dnssecOK
+            ? '✅ Übertragung sicher und Hash vorhanden (DNSSEC geprüft)'
+            : '⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC-Signatur)';
+
           matchedRecord.textContent = `v=${match.v}; k=${match.k}; hash=${match.hash}`;
-          dnssecStatus.textContent  = dnssecOK? '✔ DNSSEC vorhanden':'⚠ kein DNSSEC';
+          dnssecStatus.textContent  = dnssecOK ? '✔ DNSSEC vorhanden' : '⚠ kein DNSSEC';
           matchInfo.hidden = false;
         } else {
           dnsResult.className = 'result fail';
           dnsResult.textContent = '❌ Kein passender Hash gefunden.';
           matchInfo.hidden = true;
         }
-      } catch(err){
+      } catch (err) {
         dnsResult.className = 'result fail';
-        dnsResult.textContent = 'Fehler: '+err.message;
+        dnsResult.textContent = 'Fehler: ' + err.message;
         matchInfo.hidden = true;
       }
     });
-    </script>
+  </script>
+<p>powered by <a href="https://www.netzsicher.net/impressum">netzsicher</a></p>
+    <img src="https://iban-check.netzsicher.net/Netzsicher_Logo_email.png" alt="netzsicher-Logo"></img>
 </body>
 </html>
