@@ -78,22 +78,6 @@
   <h3>Ben&ouml;tigter DNS-Eintrag</h3>
   <pre><code>_iban.&lt;example.com&gt; 3600 IN TXT "v=1; k=sha256; hash=&lt;64-stelliger&nbsp;Hex-Hash&gt;"</code></pre>
   <p>Weitere IBANs → <code>_iban2</code>, <code>_iban3</code> … <code>_iban10</code>.</p>
-
-  <h3>SHA-256 einer IBAN selbst berechnen</h3>
-  <ul>
-    <li><strong>Linux / macOS</strong>  
-      <code>printf '%s' "DE12 3456 7890 1234 5678 90" | tr -d '[:space:]' | sha256sum | cut -d' ' -f1</code></li>
-    <li><strong>Windows (PowerShell)</strong>  
-      <code>(
-    [BitConverter]::ToString(
-        ([System.Security.Cryptography.SHA256]::Create()).ComputeHash(
-            [System.Text.Encoding]::UTF8.GetBytes(
-                ("DE39 5001 0517 5549 650696" -replace '\s','')
-            )
-        )
-    ) -replace '-',''
-).ToLower()</code></li>
-  </ul>
   <p>Der Quellcode dieser Seite ist unter <a href="https://github.com/cablebender/iban-check">https://github.com/cablebender/iban-check</a> ver&ouml;ffentlicht und steht unter der MIT-Lizenz.</p>
 </details>
 
