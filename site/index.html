@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+  <link rel="icon" href="favicon.ico">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>iban-check.org – IBAN ⇄ DNS Hash Checker</title>
@@ -61,6 +62,7 @@
       padding: 1rem;
       border-radius: .5rem;
       font-size: .95rem;
+      width: clamp(300px, 90vw, 480px);
     }
     .ok {
       background: #d1fae5;
@@ -97,14 +99,17 @@
       cursor: pointer;
     }
     .match-info {
-      margin-top: 1rem;
-      padding: .5rem .8rem;
-      border-left: 4px solid #4e9a06;
-      background: #eef9ee;
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #34d399;
+      margin-top: 1.4rem;
+      padding: 1rem;
+      border-radius: .5rem;
       font-size: .95rem;
-    }
+      width: clamp(300px, 90vw, 480px);
+}
     .result.warn + .match-info {
-      border-left-color: #d9a300;
+      border: 1px solid #d9a300;
       background: #fffbe6;
     }
     .result.fail + .match-info {
@@ -115,11 +120,22 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    #output,
+    #dnsResult,
+    .result.Info,
+    .match-info code,
+    code {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
   <form id="form">
-    <h1>iban-check.org - IBAN als SHA256 im DNS vergleichen</h1>
+  <div align=center><img src="logo.png" alt="IBAN-Check"></div>
+    <!-- <h1>IBAN als SHA256 im DNS vergleichen</h1> -->
     <label for="iban">IBAN</label>
     <input id="iban" name="iban" placeholder="DE12 3456 7890 1234 5678 90" required>
 
@@ -144,47 +160,57 @@
   <!-- Hilfeboxen -->
   <details class="help">
     <summary><strong>Kurze Zusammenfassung</strong></summary>
-<p>Der IBAN-Check hilft dabei, Betrug durch gef&auml;lschte Kontodaten auf Rechnungen zu erkennen. Man gibt die IBAN und die Maildomain (hinter dem @ beim Absender) ein, und das System pr&uuml;ft automatisch, ob die IBAN wirklich zu dieser Firma geh&ouml;rt. Das Ergebnis wird wie bei einer Ampel angezeigt:
-  Gr&uuml;n = sicher, Gelb = unsicher (aber korrekt), Rot = gef&auml;hrlich (wahrscheinlich Betrug).</p>
-  <h3>Hinweis</h3>
-    <p>Diese Seite ist ein Proof-of-Work zur Darstellung der Funktion und zum Test. Das Konzept funktioniert problemlos dezentral, autark und ohne diese Webseite. Als API wird lediglich eine Abfrage im DNS vorausgesetzt.</p>
-  <h3>Vereinfachte Erkl&auml;rung</h3>
-  <p>In letzter Zeit kommt es immer h&auml;ufiger vor, dass Kriminelle Rechnungen f&auml;lschen und dabei die Bankverbindung (IBAN) austauschen. Der Kunde merkt das oft nicht und &uuml;berweist dann versehentlich Geld direkt an die Betr&uuml;ger.</p>
-  <p>Hier hilft der IBAN-Check – ein Online-Pr&uuml;fwerkzeug, das einfach zeigt, ob die IBAN auf der Rechnung wirklich zur Firma geh&ouml;rt:</p>
-  <p>Die Firma hinterlegt ihre echte IBAN verschl&uuml;sselt im DNS auf ihrer offiziellen Internet-Adresse.</p>
-  <p>Die Firma versendet mit dieser Domain im Absender Mails mit Rechnungen an ihre Kunden.</p>
-  <p>Der Kunde pr&uuml;ft die Rechnung, indem er die IBAN und die Internetadresse der Firma in den IBAN-Check eingibt.</p>
-  <p>Das System vergleicht, ob die IBAN mit der offiziell hinterlegten &uuml;bereinstimmt.</p>
-  <p>Das Ergebnis wird leicht verst&auml;ndlich mit Farben dargestellt:</p>
-  <ul>
-    <li>✅ Alles stimmt und ist sicher.</li>
-    <li>⚠️ IBAN passt, aber die Verbindung war nicht ganz sicher - lieber nochmal genau hinschauen.</li>
-    <li>❌ Achtung! Die IBAN geh&ouml;rt wahrscheinlich nicht zur Firma - m&ouml;glicher Betrug!</li>
-  </ul>
-
+    <p>Der IBAN-Check hilft dabei, Betrug durch gefälschte Kontodaten auf Rechnungen zu erkennen. 
+       Man gibt die IBAN und die Maildomain (hinter dem @ beim Absender) ein, 
+       und das System prüft automatisch, ob die IBAN wirklich zu dieser Firma gehört. 
+       Das Ergebnis wird wie bei einer Ampel angezeigt: 
+       Grün = sicher, Gelb = unsicher (aber korrekt), Rot = gefährlich (wahrscheinlich Betrug).</p>
+    <h3>Hinweis</h3>
+    <p>Diese Seite ist ein Proof-of-Work zur Darstellung der Funktion und zum Test. 
+       Das Konzept funktioniert dezentral, autark und ohne diese Webseite. 
+       Als API wird lediglich eine Abfrage im DNS vorausgesetzt.</p>
   </details>
+
   <details class="help">
     <summary><strong>technische Erläuterung</strong></summary>
- <h3>Funktionsweise</h3>
-  <p>Die Seite berechnet aus der eingegebenen IBAN einen <em>SHA-256</em>-Hash
-     (ohne Leerzeichen) und sucht danach bis zu zehn TXT-Records
-     <code>_iban[2-10].&lt;deine&nbsp;Domain&gt;</code>.  
-     Stimmen Hash und Meta-Angaben, erscheint ein gr&uuml;nes bzw. gelbes OK.</p>
-
-  <h3>Ben&ouml;tigter DNS-Eintrag</h3>
-  <pre><code>_iban.&lt;example.com&gt; 3600 IN TXT "v=1; k=sha256; hash=&lt;64-stelliger&nbsp;Hex-Hash&gt;"</code></pre>
-  <p>Weitere IBANs → <code>_iban2</code>, <code>_iban3</code> … <code>_iban10</code>.</p>
-  <p>Der Quellcode dieser Seite ist unter <a href="https://github.com/cablebender/iban-check">https://github.com/cablebender/iban-check</a> ver&ouml;ffentlicht und steht unter der MIT-Lizenz.</p>
+    <h3>Funktionsweise</h3>
+    <p>Die Seite berechnet aus der eingegebenen IBAN einen <em>SHA-256</em>-Hash
+       (ohne Leerzeichen) und sucht danach bis zu zehn TXT-Records
+       <code>_iban[2-10].&lt;deine&nbsp;Domain&gt;</code>.  
+       Stimmen Hash und Meta-Angaben, erscheint ein grünes bzw. gelbes OK.</p>
+    <h3>Benötigter DNS-Eintrag</h3>
+    <pre><code>_iban.&lt;example.com&gt; 3600 IN TXT "v=1; k=sha256; hash=&lt;64-stelliger&nbsp;Hex-Hash&gt;"</code></pre>
+    <p>Weitere IBANs → <code>_iban2</code>, <code>_iban3</code> … <code>_iban10</code>.</p>
+    <p>Der Quellcode dieser Seite ist unter 
+       <a href="https://github.com/cablebender/iban-check">
+         https://github.com/cablebender/iban-check
+       </a> 
+       veröffentlicht und steht unter der MIT-Lizenz.</p>
   </details>
 
   <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/build/sha256.min.js"></script>
   <script>
-    const form      = document.getElementById('form');
-    const output    = document.getElementById('output');
-    const dnsResult = document.getElementById('dnsResult');
-    const matchInfo = document.getElementById('matchInfo');
+    const form          = document.getElementById('form');
+    const output        = document.getElementById('output');
+    const dnsResult     = document.getElementById('dnsResult');
+    const matchInfo     = document.getElementById('matchInfo');
     const matchedRecord = document.getElementById('matchedRecord');
     const dnssecStatus  = document.getElementById('dnssecStatus');
+
+    // URL-Parameter auslesen und bei submit=1 automatisch absenden
+    window.addEventListener('DOMContentLoaded', () => {
+      const params     = new URLSearchParams(window.location.search);
+      const ibanParam  = params.get('iban');
+      const domainParam= params.get('domain');
+      const submitFlag = params.get('submit');
+
+      if (ibanParam)   form.iban.value   = ibanParam;
+      if (domainParam) form.domain.value = domainParam;
+
+      if (ibanParam && domainParam && submitFlag === '1') {
+        form.requestSubmit();
+      }
+    });
 
     async function sha256Hex(str) {
       const clean = str.replace(/\s+/g, '');
@@ -210,8 +236,8 @@
 
     form.addEventListener('submit', async ev => {
       ev.preventDefault();
-      const iban   = form.iban.value.trim();
-      const domain = form.domain.value.trim().toLowerCase();
+      const iban    = form.iban.value.trim();
+      const domain  = form.domain.value.trim().toLowerCase();
       const ibanHex = await sha256Hex(iban);
 
       // 1) immer Hash anzeigen
@@ -221,13 +247,13 @@
       // Wenn keine Domain, dann nur Hash
       if (!domain) {
         dnsResult.textContent = '';
-        dnsResult.className = '';
-        matchInfo.hidden = true;
+        dnsResult.className   = '';
+        matchInfo.hidden      = true;
         return;
       }
 
       // 2) bei Domain zusätzlich DNS-Prüfung
-      dnsResult.className = 'result warn';
+      dnsResult.className   = 'result warn';
       dnsResult.textContent = '⏳ Prüfe …';
 
       try {
@@ -241,22 +267,22 @@
           ))
           .filter(o => o.v === '1' && o.k === 'sha256' && o.hash);
 
-        const match = records.find(o => o.hash === ibanHex);
+        const match    = records.find(o => o.hash === ibanHex);
         const dnssecOK = lookups.some(l => l.dnssecOK);
 
         if (match) {
-          dnsResult.className = dnssecOK ? 'result ok' : 'result warn';
+          dnsResult.className   = dnssecOK ? 'result ok' : 'result warn';
           dnsResult.textContent = dnssecOK
             ? '✅ Übertragung sicher und Hash vorhanden (DNSSEC geprüft)'
             : '⚠️ Hash stimmt, aber Übertragung unsicher (keine DNSSEC-Signatur)';
 
           matchedRecord.textContent = `v=${match.v}; k=${match.k}; hash=${match.hash}`;
           dnssecStatus.textContent  = dnssecOK ? '✔ DNSSEC vorhanden' : '⚠ kein DNSSEC';
-          matchInfo.hidden = false;
+          matchInfo.hidden          = false;
         } else {
-          dnsResult.className = 'result fail';
+          dnsResult.className   = 'result fail';
           dnsResult.textContent = '❌ Kein passender Hash gefunden.';
-          matchInfo.hidden = true;
+          matchInfo.hidden      = true;
         }
       } catch (err) {
         dnsResult.className = 'result fail';
@@ -265,7 +291,8 @@
       }
     });
   </script>
-<p>powered by <a href="https://www.netzsicher.net/impressum">netzsicher</a></p>
-    <img src="https://iban-check.netzsicher.net/Netzsicher_Logo_email.png" alt="netzsicher-Logo"></img>
+
+  <p>powered by <a href="https://www.netzsicher.net/impressum">netzsicher</a></p>
+  <img src="https://iban-check.netzsicher.net/Netzsicher_Logo_email.png" alt="netzsicher-Logo" />
 </body>
 </html>
