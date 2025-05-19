@@ -35,3 +35,10 @@ _iban2.example.com 3600 IN TXT "v=1; k=sha256; hash=<64-stelliger Hex-Hash>"
 ..
 _iban10.example.com 3600 IN TXT "v=1; k=sha256; hash=<64-stelliger Hex-Hash>"
 ```
+
+### Aufruf der URL
+#### ohne Vorbelegung der Variablen
+https://iban-check.netzsicher.net
+
+#### mit Vorbelegung der Variablen (zur eigenen Verteilung) und einmaligem Ausführen
+https://iban-check.netzsicher.net/?iban=DE12+3456+7890+1234+5678+90&domain=example.com&submit=1
