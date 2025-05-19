@@ -7,10 +7,10 @@ https://www.iban-check.org und https://iban-check.netzsicher.net
 Powered by https://www.netzsicher.net
 
 ## Problemstellung
-IBANs werden durch Angreifer in Mails immer wieder gefälscht. Dadurch kommen Kontoüberweisungen (z.Bsp. XRechnung, ZUGFeRD oder PDF-Anhänge) nicht beim regulären Rechnungsersteller an.
+IBANs werden durch Angreifer in Mails immer wieder gefälscht. Dadurch kommen Kontoüberweisungen nicht beim regulären Rechnungsersteller an. Das Thema kann durch Automatisierung (z.Bsp. XRechnung, ZUGFeRD oder PDF-Anhänge)  künftig weiter verstärkt werden.
 
 ## Lösungansatz
-Ein Rechnungsersteller setzt im DNS verschlüsselte Einträge seiner Bankverbindungen. Der Empfänger prüft diese und kann dadurch Manipulationen leichter erkennen.
+Ein Rechnungsersteller setzt im DNS verschlüsselte Einträge seiner Bankverbindungen. Der Empfänger prüft diese und kann dadurch Manipulationen der IBAN leichter erkennen.
 
 ## technischer Ansatz
 ### SHA-256 einer IBAN erstellen
