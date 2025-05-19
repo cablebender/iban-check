@@ -42,3 +42,6 @@ https://iban-check.netzsicher.net
 
 #### mit Vorbelegung der Variablen (zur eigenen Verteilung) und einmaligem Ausführen
 https://iban-check.netzsicher.net/?iban=DE12+3456+7890+1234+5678+90&domain=example.com&submit=1
+
+#### Alternativen
+aufgrund des dezentralen und offenen Konzeptes besteht die Möglichkeit eigenen Programmcode direkt in der entsprechenden Workflow-Software zur Rechnungseingangsprüfung zu integrieren.
